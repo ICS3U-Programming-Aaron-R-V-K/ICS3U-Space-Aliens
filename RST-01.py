@@ -5,13 +5,12 @@
 # Define the game_scene function
 def game_scene():
 
-
     # Display a greeting message
     print("Hello, Capitan!")
 
     # Repeat forever loop
     while True:
-        pass # Is a place holder for the moment
-    
+        pass # Is a placeholder for the moment
+
 if __name__ == "__main__":
     game_scene()
