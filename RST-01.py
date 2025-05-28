@@ -9,7 +9,9 @@ def game_scene():
     # Display a greeting message
     print("Hello, Capitan!")
 
+    # Repeat forever loop
     while True:
-        continue
+        pass # Is a place holder for the moment
+    
 if __name__ == "__main__":
     game_scene()
