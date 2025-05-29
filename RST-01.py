@@ -2,6 +2,7 @@
 # Created By: Aaron Rivelino
 # Date: May 28, 2025
 
+
 # Define the game_scene function
 def game_scene():
 
@@ -10,7 +11,8 @@ def game_scene():
 
     # Repeat forever loop
     while True:
-        pass # Is a placeholder for the moment
+        pass  # Is a placeholder for the moment
+
 
 if __name__ == "__main__":
     game_scene()
