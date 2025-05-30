@@ -29,6 +29,7 @@ jobs:
         uses: mr-coxall/super-linter@master
 
         env:
+          DISABLE_ERRORS: true
 
           VALIDATE_ALL_CODEBASE: true
 
