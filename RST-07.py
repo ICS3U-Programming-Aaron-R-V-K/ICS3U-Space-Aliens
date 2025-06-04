@@ -16,7 +16,9 @@ def menu_scene():
     # Text variable, list
     text = []
     # Add the first text. with its measures, font and color
-    text1 = stage.Text(width=29, height=12, font=None, palette=constants.RED_PALETTE, buffer=None)
+    text1 = stage.Text(
+        width=29, height=12, font=None, palette=constants.RED_PALETTE, buffer=None
+    )
     # Set where the text is going to be, in pixels
     text1.move(20, 10)
     text1.text("Mega Donut Studios")
@@ -24,15 +26,19 @@ def menu_scene():
     text.append(text1)
 
     # Add the second text the same way
-    text2 = stage.Text(width=29, height=12, font=None, palette=constants.RED_PALETTE, buffer=None)
+    text2 = stage.Text(
+        width=29, height=12, font=None, palette=constants.RED_PALETTE, buffer=None
+    )
     text2.move(48, 118)
     text2.text("PRESS START")
     text.append(text2)
 
     # Set the background to image 0 in the image bank
     # And the size (10x8 tile of size 16x16)
-    background = stage.Grid(image_bank_mt_background, constants.SCREEN_X, constants.SCREEN_Y)
-    
+    background = stage.Grid(
+        image_bank_mt_background, constants.SCREEN_X, constants.SCREEN_Y
+    )
+
     # Create a stage for the background to show up on
     # and set the framerate to 60fps
     game = stage.Stage(ugame.display, constants.FPS)
@@ -69,21 +75,30 @@ def game_scene():
     select_button = constants.button_state["button_up"]
 
     # get sound ready
-    pew_sound = open("pew.wav", 'rb')
+    pew_sound = open("pew.wav", "rb")
     sound = ugame.audio
     sound.stop()
     sound.mute(False)
 
     # Set the background to image 0 in the image bank
     # And the size (10x8 tile of size 16x16)
-    background = stage.Grid(image_bank_background, constants.SCREEN_GRID_X, constants.SCREEN_GRID_Y)
+    background = stage.Grid(
+        image_bank_background, constants.SCREEN_GRID_X, constants.SCREEN_GRID_Y
+    )
 
     # A sprite that will be updated every frame
-    ship = stage.Sprite(image_bank_sprites, 5, 75, constants.SCREEN_Y - (2 * constants.SPRITE_SIZE))
-    
+    ship = stage.Sprite(
+        image_bank_sprites, 5, 75, constants.SCREEN_Y - (2 * constants.SPRITE_SIZE)
+    )
+
     # Alien sprite
-    alien = stage.Sprite(image_bank_sprites, 9, int(constants.SCREEN_X/ 2 - constants.SPRITE_SIZE/ 2), 16)
-    
+    alien = stage.Sprite(
+        image_bank_sprites,
+        9,
+        int(constants.SCREEN_X / 2 - constants.SPRITE_SIZE / 2),
+        16,
+    )
+
     # Create a stage for the background to show up on
     # and set the framerate to 60fps
     game = stage.Stage(ugame.display, constants.FPS)
@@ -134,7 +149,7 @@ def game_scene():
             if ship.x >= 0:
                 ship.move(ship.x - 2, ship.y)
             else:
-                ship.move(0,ship.y)
+                ship.move(0, ship.y)
         if keys & ugame.K_UP != 0:
             pass
         if keys & ugame.K_DOWN != 0:

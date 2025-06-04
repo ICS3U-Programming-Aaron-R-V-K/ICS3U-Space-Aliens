@@ -1,6 +1,6 @@
 # !/usr/bin/env python3
 # Created By: Aaron Rivelino
-# Date: june 3, 2025
+# Date: May 28, 2025
 
 import ugame
 import stage
@@ -177,11 +177,22 @@ def game_scene():
         16,
     )
 
+    # Create a list of laser when shoot
+    # for loop going from 0 to 4
+    # Create a single sprite
+    lasers = []
+    for laser_number in range(constants.TOTAL_NUMBER_OF_LASERS):
+        a_single_laser = stage.Sprite(
+            image_bank_sprites, 10, constants.OFF_SCREEN_X, constants.OFF_SCREEN_Y
+        )
+        # append the single laser
+        lasers.append(a_single_laser)
+
     # Create a stage for the background to show up on
     # and set the framerate to 60fps
     game = stage.Stage(ugame.display, constants.FPS)
     # Set the layers of all sprites, items show up in order
-    game.layers = [ship] + [alien] + [background]
+    game.layers = lasers + [ship] + [alien] + [background]
     # Render al sprites
     # most likely you will render the background once per game scene
     game.render_block()
@@ -213,19 +224,25 @@ def game_scene():
         # B button
         if keys & ugame.K_X != 0:
             pass
-        #
+
         if keys & ugame.K_START != 0:
             pass
         if keys & ugame.K_SELECT != 0:
             pass
+        # If keys is pressed right
         if keys & ugame.K_RIGHT != 0:
+            # if the ships is inside the grid it can move
             if ship.x <= constants.SCREEN_X - constants.SPRITE_SIZE:
-                ship.move(ship.x + 2, ship.y)
+                ship.move((ship.x + constants.SPRITE_MOVEMENT_SPEED), ship.y)
             else:
+                # It will bounce off the limit of the right part
                 ship.move(constants.SCREEN_X - constants.SPRITE_SIZE, ship.y)
+        # If keys pressed is left
         if keys & ugame.K_LEFT != 0:
+            # if the ship is inside the grid it can move
             if ship.x >= 0:
-                ship.move(ship.x - 2, ship.y)
+                ship.move((ship.x - constants.SPRITE_MOVEMENT_SPEED), ship.y)
+            # Else it will bounce off the left limit
             else:
                 ship.move(0, ship.y)
         if keys & ugame.K_UP != 0:
@@ -235,9 +252,33 @@ def game_scene():
 
         # update game logic
         if a_button == constants.button_state["button_just_pressed"]:
-            sound.play(pew_sound)
+            # fire a laser, if we have enough power( have not used all lasers)
+            # check for each individual laser an check if it less than 0
+            for laser_number in range(len(lasers)):
+                if lasers[laser_number].x < 0:
+                    # If there is one laser that is off the screen, move it to where the ship is
+                    lasers[laser_number].move(ship.x, ship.y)
+                    # play the sound when you find one
+                    sound.play(pew_sound)
+                    break
+
+            # Check if there is a laser on the screen, so it moves
+            for laser_number in range(len(lasers)):
+                # if the laser is on the screen, move the laser up 1
+                if lasers[laser_number].x > 0:
+                    lasers[laser_number].move(
+                        lasers[laser_number].x,
+                        lasers[laser_number].y - constants.LASER_SPEED,
+                    )
+                    # Then check its y location, so it is not off the screen
+                    if lasers[laser_number].y < constants.OFF_TOP_SCREEN:
+                        # if it goes off top of the screen move it to the holding pattern
+                        lasers[laser_number].move(
+                            constants.OFF_SCREEN_X, constants.OFF_SCREEN_Y
+                        )
+
         # redraw sprites
-        game.render_sprites([ship] + [alien])
+        game.render_sprites(lasers + [ship] + [alien])
         game.tick()
 
 
