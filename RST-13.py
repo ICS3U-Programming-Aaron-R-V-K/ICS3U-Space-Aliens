@@ -1,11 +1,16 @@
 # !/usr/bin/env python3
 # Created By: Aaron Rivelino
 # Date: May 28, 2025
+# Donut Invaders Game, is a space shooting alien game where you have to shoot at aliens
+# to get the highest score possible
 
 import ugame
 import stage
 import time
 import random
+
+# library to reboot the pybadge, making the game start over, and reload the game
+import supervisor
 
 import constants
 
@@ -134,7 +139,14 @@ def menu_scene():
 # Define the game_scene function
 def game_scene():
 
+    # Set score to 0
     score = 0
+    # Display the score
+    score_text = stage.Text(width=29, height=14)
+    score_text.clear()
+    score_text.cursor(0, 0)
+    score_text.move(1, 1)
+    score_text.text("Score: {0}".format(score))
 
     # Define the alien function
     def show_alien():
@@ -163,14 +175,12 @@ def game_scene():
     select_button = constants.button_state["button_up"]
 
     # get sound ready
+    # open the sound for pew
     pew_sound = open("pew.wav", "rb")
-    sound = ugame.audio
-    sound.stop()
-    sound.mute(False)
-
-    # get sound ready for boom
-    # get sound ready
+    # open the sound for boom
     boom_sound = open("boom.wav", "rb")
+    # open crash sound
+    crash_sound = open("crash.wav", "rb")
     sound = ugame.audio
     sound.stop()
     sound.mute(False)
@@ -322,6 +332,17 @@ def game_scene():
                         )
                         # Then call the function to show another alien
                         show_alien()
+                        # Then subtract - 1 to the global score
+                        score -= 1
+                        # if the score is less than 0 don't subtract nothing
+                        if score < 0:
+                            score = 0
+                        # Then display the new score
+                        score_text.clear()
+                        score_text.cursor(0, 0)
+                        score_text.move(1, 1)
+                        score_text.text("Score: {0}".format(score))
+
             # Each frame checks if the lasers are touching the aliens
             # Loop for every laser but only the ones that are on the screen
             for laser_number in range(len(lasers)):
@@ -352,11 +373,104 @@ def game_scene():
                                 sound.play(boom_sound)
                                 show_alien()
                                 show_alien()
+                                # When a laser touches add 1 to the score and re-draw the screen
                                 score = score + 1
+                                score_text.clear()
+                                score_text.cursor(0, 0)
+                                score_text.move(1, 1)
+                                score_text.text("Score: {0}".format(score))
+
+            # When an alien touches the ship
+            # Each frame check if any alien is touching the ship
+            for alien_number in range(len(aliens)):
+                if aliens[alien_number].x > 0:
+                    if stage.collide(
+                        aliens[alien_number].x + 1,
+                        aliens[alien_number].y,
+                        aliens[alien_number].x + 15,
+                        aliens[alien_number].y + 15,
+                        ship.x,
+                        ship.y,
+                        ship.x + 15,
+                        ship.y + 15,
+                    ):
+                        # aliens hit the ship
+                        sound.stop()
+                        sound.play(crash_sound)
+                        time.sleep(3.0)
+                        game_over_scene(score)
 
         # redraw sprites
         game.render_sprites(aliens + lasers + [ship])
+        # wait until refresh rate finishes
         game.tick()
+
+
+# this function is the game over scene
+def game_over_scene(final_score):
+
+    # turn off sound from last scene
+    sound = ugame.audio
+    sound.stop()
+
+    # image banks
+    # grabs the empty image bank and
+    image_bank_2 = stage.Bank.from_bmp16("mt_game_studio.bmp")
+
+    # sets the background to image 0 in the image bank
+    # to print a blanc background
+    background = stage.Grid(
+        image_bank_2, constants.SCREEN_GRID_X, constants.SCREEN_GRID_Y
+    )
+
+    # Add a list for text
+    text = []
+    # Text object for displaying the final score
+    text1 = stage.Text(
+        width=29, height=14, font=None, palette=constants.BLUE_PALETTE, buffer=None
+    )
+    text1.text("Final Score: {:0>2d}".format(final_score))
+    text1.move(22, 20)
+    text.append(text1)
+
+    # Text object for "GAME OVER" message
+    text2 = stage.Text(
+        width=29, height=14, font=None, palette=constants.BLUE_PALETTE, buffer=None
+    )
+    text2.text("GAME OVER")
+    text2.move(43, 60)
+    text.append(text2)
+
+    # Text object for "PRESS SELECT" instruction
+    text3 = stage.Text(
+        width=29, height=14, font=None, palette=constants.BLUE_PALETTE, buffer=None
+    )
+    text3.text("PRESS SELECT")
+    text3.move(32, 110)
+    text.append(text3)
+
+    # create a stage for the background to show up on
+    # Set the frame rate to 60fps
+    game = stage.Stage(ugame.display, constants.FPS)
+    # set the layers, they show up in order
+    game.layers = text + [background]
+
+    # render the background and initial location of sprite list
+    # most likely you will only render background once per scene
+    game.render_block()
+
+    # repeat forever, game loop
+    while True:
+        # get user input
+        keys = ugame.buttons.get_pressed()
+
+        # Start button
+        # if it is pressed it will reboot the game
+        if keys & ugame.K_SELECT != 0:
+            supervisor.reload()
+
+        # update game logic
+        game.tick()  # wait until refresh rate finishes
 
 
 if __name__ == "__main__":
