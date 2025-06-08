@@ -134,9 +134,7 @@ def menu_scene():
 # Define the game_scene function
 def game_scene():
 
-    # Game score
     score = 0
-
     # Define the alien function
     def show_alien():
         # This function takes an alien from off the screen and moves it on screen
@@ -144,7 +142,9 @@ def game_scene():
             # if the alien position is less than 0(side of the screen)
             if aliens[alien_number].x < 0:
                 # Then it would take it and place in a random x axis, and on the y axis would be at the top of the screen
-                aliens[alien_number].move(random.randint(0 + constants.SPRITE_SIZE, constants.SCREEN_GRID_X - constants.SPRITE_SIZE), constants.OFF_TOP_SCREEN)
+                aliens[alien_number].move(random.randint(0 + constants.SPRITE_SIZE,
+                                                         constants.SCREEN_X - constants.SPRITE_SIZE),
+                                         constants.OFF_TOP_SCREEN)
                 break
 
     # images banks for CircuitPython
@@ -157,14 +157,14 @@ def game_scene():
     start_button = constants.button_state["button_up"]
     select_button = constants.button_state["button_up"]
 
-    # get sound ready for lasers
+    # get sound ready
     pew_sound = open("pew.wav", "rb")
     sound = ugame.audio
     sound.stop()
     sound.mute(False)
 
     # get sound ready for boom
-        # get sound ready
+    # get sound ready
     boom_sound = open("boom.wav", "rb")
     sound = ugame.audio
     sound.stop()
@@ -194,11 +194,11 @@ def game_scene():
     # Create a list of aliens
     aliens = []
     for alien_number in range(constants.TOTAL_NUMBER_OF_ALIENS):
-        a_single_alien = stage.Sprite(
-            image_bank_sprites, 9, constants.OFF_SCREEN_X, constants.OFF_SCREEN_Y
-        )
+        a_single_alien = stage.Sprite(image_bank_sprites, 9,
+                                       constants.OFF_SCREEN_X,
+                                       constants.OFF_SCREEN_Y)
         # append the single laser
-        lasers.append(a_single_alien)
+        aliens.append(a_single_alien)
     # Place one alien on the screen
     show_alien()
 
@@ -217,7 +217,7 @@ def game_scene():
     # and set the framerate to 60fps
     game = stage.Stage(ugame.display, constants.FPS)
     # Set the layers of all sprites, items show up in order
-    game.layers = lasers + [ship] + aliens + [background]
+    game.layers = aliens + lasers + [ship] + [background]
     # Render al sprites
     # most likely you will render the background once per game scene
     game.render_block()
@@ -228,7 +228,7 @@ def game_scene():
         keys = ugame.buttons.get_pressed()
 
         # A button to fire
-        if keys & ugame.K_O != 0:
+        if keys & ugame.K_X != 0:
             # If the A button was previously up and now is being pressed
             if a_button == constants.button_state["button_up"]:
                 # and set button as just pressed(just once)
@@ -247,7 +247,7 @@ def game_scene():
             else:
                 a_button = constants.button_state["button_up"]
         # B button
-        if keys & ugame.K_X != 0:
+        if keys & ugame.K_O != 0:
             pass
 
         if keys & ugame.K_START != 0:
@@ -293,8 +293,7 @@ def game_scene():
             if lasers[laser_number].x > 0:
                 lasers[laser_number].move(
                     lasers[laser_number].x,
-                    lasers[laser_number].y - constants.LASER_SPEED,
-                )
+                    lasers[laser_number].y - constants.LASER_SPEED)
                 # Then check its y location, so it is not off the screen
                 if lasers[laser_number].y < constants.OFF_TOP_SCREEN:
                     # if it goes off top of the screen move it to the holding pattern
@@ -308,8 +307,7 @@ def game_scene():
                 if aliens[alien_number].x > 0:
                     aliens[alien_number].move(
                     aliens[alien_number].x,
-                    aliens[alien_number].y + constants.ALIEN_SPEED,
-                )
+                    aliens[alien_number].y + constants.ALIEN_SPEED)
                     # Then check its y location is off the screen
                     if aliens[alien_number].y > constants.SCREEN_Y:
                         # if it goes off then it moves back to its holding area
@@ -318,7 +316,6 @@ def game_scene():
                         )
                         # Then call the function to show another alien
                         show_alien()
-
             # Each frame checks if the lasers are touching the aliens 
             # Loop for every laser but only the ones that are on the screen
             for laser_number in range(len(lasers)):
@@ -327,7 +324,8 @@ def game_scene():
                     # the same for aliens
                     for alien_number in range(len(aliens)):
                         if aliens[alien_number].x > 0:
-                            if stage.collide(lasers[laser_number].x + 16, lasers[laser_number].y + 2,
+                            # Add the specific collisions for the aliens and lasers
+                            if stage.collide(lasers[laser_number].x + 6, lasers[laser_number].y + 2,
                                              lasers[laser_number].x + 11, lasers[laser_number].y + 12,
                                              aliens[alien_number].x + 1, aliens[alien_number].y,
                                              aliens[alien_number].x + 15, aliens[alien_number].y + 15):
@@ -339,6 +337,7 @@ def game_scene():
                                 show_alien()
                                 show_alien()
                                 score = score + 1
+
 
 
         # redraw sprites

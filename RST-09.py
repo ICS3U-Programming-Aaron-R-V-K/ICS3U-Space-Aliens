@@ -203,7 +203,7 @@ def game_scene():
         keys = ugame.buttons.get_pressed()
 
         # A button to fire
-        if keys & ugame.K_O != 0:
+        if keys & ugame.K_X != 0:
             # If the A button was previously up and now is being pressed
             if a_button == constants.button_state["button_up"]:
                 # and set button as just pressed(just once)
@@ -222,7 +222,7 @@ def game_scene():
             else:
                 a_button = constants.button_state["button_up"]
         # B button
-        if keys & ugame.K_X != 0:
+        if keys & ugame.K_O != 0:
             pass
 
         if keys & ugame.K_START != 0:

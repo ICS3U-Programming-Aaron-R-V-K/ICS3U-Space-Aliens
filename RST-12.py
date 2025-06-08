@@ -1,6 +1,8 @@
 # !/usr/bin/env python3
 # Created By: Aaron Rivelino
 # Date: May 28, 2025
+# Donut Invaders Game, is a space shooting alien game where you have to shoot at aliens
+# to get the highest score possible
 
 import ugame
 import stage
@@ -134,6 +136,15 @@ def menu_scene():
 # Define the game_scene function
 def game_scene():
 
+    # Set score to 0
+    score = 0
+    # Display the score
+    score_text = stage.Text(width=29, height=14)
+    score_text.clear()
+    score_text.cursor(0,0)
+    score_text.move(1,1)
+    score_text.text("Score: {0}".format(score))
+
     # Define the alien function
     def show_alien():
         # This function takes an alien from off the screen and moves it on screen
@@ -157,11 +168,16 @@ def game_scene():
     select_button = constants.button_state["button_up"]
 
     # get sound ready
+    # open the sound for pew
     pew_sound = open("pew.wav", "rb")
+    # open the sound for boom
+    boom_sound = open("boom.wav", "rb")
     sound = ugame.audio
     sound.stop()
     sound.mute(False)
 
+
+    
     # Set the background to image 0 in the image bank
     # And the size (10x8 tile of size 16x16)
     background = stage.Grid(
@@ -308,9 +324,49 @@ def game_scene():
                         )
                         # Then call the function to show another alien
                         show_alien()
+                        # Then subtract - 1 to the global score
+                        score -= 1
+                        # if the score is less than 0 don't subtract nothing
+                        if score < 0:
+                            score = 0
+                        # Then display the new score
+                        score_text.clear()
+                        score_text.cursor(0,0)
+                        score_text.move(1,1)
+                        score_text.text("Score: {0}".format(score))
+
+            # Each frame checks if the lasers are touching the aliens 
+            # Loop for every laser but only the ones that are on the screen
+            for laser_number in range(len(lasers)):
+                # if, to check if they are on the screen
+                if lasers[laser_number].x > 0:
+                    # the same for aliens
+                    for alien_number in range(len(aliens)):
+                        if aliens[alien_number].x > 0:
+                            # Add the specific collisions for the aliens and lasers
+                            if stage.collide(lasers[laser_number].x + 6, lasers[laser_number].y + 2,
+                                             lasers[laser_number].x + 11, lasers[laser_number].y + 12,
+                                             aliens[alien_number].x + 1, aliens[alien_number].y,
+                                             aliens[alien_number].x + 15, aliens[alien_number].y + 15):
+                                # You hit an alien
+                                aliens[alien_number].move(constants.OFF_SCREEN_X, constants.OFF_SCREEN_Y)
+                                lasers[laser_number].move(constants.OFF_SCREEN_X, constants.OFF_SCREEN_Y)
+                                sound.stop()
+                                sound.play(boom_sound)
+                                show_alien()
+                                show_alien()
+                                # When a laser touches add 1 to the score and re-draw the screen
+                                score = score + 1
+                                score_text.clear()
+                                score_text.cursor(0,0)
+                                score_text.move(1,1)
+                                score_text.text("Score: {0}".format(score))
+
+
 
         # redraw sprites
         game.render_sprites(aliens + lasers + [ship])
+        # wait until refresh rate finishes
         game.tick()
 
 
