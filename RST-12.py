@@ -227,7 +227,7 @@ def game_scene():
     # and set the framerate to 60fps
     game = stage.Stage(ugame.display, constants.FPS)
     # Set the layers of all sprites, items show up in order
-    game.layers = aliens + lasers + [ship] + [background]
+    game.layers = [score_text] + aliens + lasers + [ship] + [background]
     # Render al sprites
     # most likely you will render the background once per game scene
     game.render_block()

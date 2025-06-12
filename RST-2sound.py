@@ -13,7 +13,10 @@ import random
 import supervisor
 
 import constants
-
+# import audiomixer and audiocore
+import audioio
+import audiocore
+import audiomixer
 
 # define the splash scene
 def splash_scene():
@@ -135,10 +138,34 @@ def menu_scene():
         # redraw sprites
         game.tick()
 
+# High Score Functions
+# Loads the high score from a file. If the file dosen't exist or its content is invalid it returns 0
+def load_high_score(filename="highscore.txt"):
+    try:
+        with open(filename, "r") as file:
+            return int(file.read())
+    # OSError covers FileNotFoundError and other potential file system errors
+    # ValueError covers cases where file content is not a valid integer 
+    except (OSError, ValueError):
+        return 0
+
+# Saves the new score to the high score file if it is greater than the currently saved high score
+# The w mode will create the fille if it doesn't exist or overwrite it
+def save_high_score(score, filename="highscore.txt"):
+    # load the function to get the existing score
+    current_high_score = load_high_score(filename)
+    if score > current_high_score:
+        try:
+            with open(filename, "w") as file: # Use "w" to create/overwrite
+                file.write(str(score))
+        except OSError:
+            # Handle potential errors during writing (e.g., full disk, permissions)
+            print("Could not save high score.")
+            # If the new score is not higher, nothing will happend
 
 # Define the game_scene function
 def game_scene():
-
+    high_score = load_high_score()
     # Set score to 0
     score = 0
     # Display the score
@@ -147,7 +174,14 @@ def game_scene():
     score_text.cursor(0, 0)
     score_text.move(1, 1)
     score_text.text("Score: {0}".format(score))
+    
+    lives = 3
+    lives_text = stage.Text(width=29, height=14)
+    score_text.cursor(0, 0)
+    lives_text.move(90, 0)
+    lives_text.text("Lives: {0}".format(lives))
 
+    
     # Define the alien function
     def show_alien():
         # This function takes an alien from off the screen and moves it on screen
@@ -164,6 +198,9 @@ def game_scene():
                 )
                 break
 
+
+
+
     # images banks for CircuitPython
     image_bank_background = stage.Bank.from_bmp16("space_aliens_background.bmp")
     image_bank_sprites = stage.Bank.from_bmp16("space_aliens.bmp")
@@ -174,16 +211,38 @@ def game_scene():
     start_button = constants.button_state["button_up"]
     select_button = constants.button_state["button_up"]
 
-    # get sound ready
-    # open the sound for pew
-    pew_sound = open("pew.wav", "rb")
-    # open the sound for boom
-    boom_sound = open("boom.wav", "rb")
-    # open crash sound
-    crash_sound = open("crash.wav", "rb")
-    sound = ugame.audio
-    sound.stop()
-    sound.mute(False)
+
+    # --- AUDIO MIXER SETUP ---
+    # Configure the audio output (Pybadge usually uses board.SPEAKER for its built-in buzzer)
+    try:
+        audio_out = audioio.AudioOut(board.SPEAKER)
+    except AttributeError:
+        # Fallback for boards that don't have board.SPEAKER defined
+        print("board.SPEAKER not found, trying board.A0 (adjust if necessary)")
+        audio_out = audioio.AudioOut(board.A0) # Example for non-SPEAKER boards
+
+    # Create a mixer with enough voices for background music and sound effects
+    # Voice 0 for music, voices 1-4 for concurrent sound effects
+    mixer = audiomixer.Mixer(
+        voice_count=5,          # 1 for music + up to 4 concurrent SFX
+        sample_rate=22050,      # Match your audio files' sample rate (CRITICAL!)
+        channel_count=1,        # Mono for Pybadge speaker (CRITICAL!)
+        bits_per_sample=16,     # Match your audio files' bit depth (CRITICAL!)
+        samples_signed=True     # True for signed 16-bit WAVs (common)
+    )
+
+    # Connect the mixer to the audio output
+    audio_out.play(mixer)
+
+    # Load sound files as WaveFile objects (they MUST match mixer's parameters)
+    music_file = audiocore.WaveFile(open("music.wav", "rb"))
+    pew_sound = audiocore.WaveFile(open("pew.wav", "rb"))
+    boom_sound = audiocore.WaveFile(open("boom.wav", "rb"))
+    crash_sound = audiocore.WaveFile(open("crash.wav", "rb"))
+
+    # Play background music on voice 0, looped
+    mixer.voice[0].play(music_file, loop=True)
+    mixer.voice[0].level = 0.5 # Adjust music volume (0.0 to 1.0)
 
     # Set the background to image 0 in the image bank
     # And the size (10x8 tile of size 16x16)
@@ -232,7 +291,7 @@ def game_scene():
     # and set the framerate to 60fps
     game = stage.Stage(ugame.display, constants.FPS)
     # Set the layers of all sprites, items show up in order
-    game.layers = [score_text]  + aliens + lasers + [ship] + [background]
+    game.layers = [score_text, lives_text] + aliens + lasers + [ship] + [background]
     # Render al sprites
     # most likely you will render the background once per game scene
     game.render_block()
@@ -363,16 +422,18 @@ def game_scene():
                                 aliens[alien_number].y + 15,
                             ):
                                 # You hit an alien
-                                aliens[alien_number].move(
+                                aliens[alien_idx].move(
                                     constants.OFF_SCREEN_X, constants.OFF_SCREEN_Y
                                 )
                                 lasers[laser_number].move(
                                     constants.OFF_SCREEN_X, constants.OFF_SCREEN_Y
                                 )
-                                sound.stop()
-                                sound.play(boom_sound)
-                                show_alien()
-                                show_alien()
+                                # Play boom sound using mixer on an available voice
+                                for voice_num in range(1, mixer.voice_count):
+                                    if not mixer.voice[voice_num].playing:
+                                        mixer.voice[voice_num].play(boom_sound)
+                                        mixer.voice[voice_num].level = 0.8 # SFX volume
+                                        break
                                 # When a laser touches add 1 to the score and re-draw the screen
                                 score = score + 1
                                 score_text.clear()
@@ -382,6 +443,7 @@ def game_scene():
 
             # When an alien touches the ship
             # Each frame check if any alien is touching the ship
+            # Check for collision between alien and ship
             for alien_number in range(len(aliens)):
                 if aliens[alien_number].x > 0:
                     if stage.collide(
@@ -394,11 +456,39 @@ def game_scene():
                         ship.x + 15,
                         ship.y + 15,
                     ):
-                        # aliens hit the ship
-                        sound.stop()
-                        sound.play(crash_sound)
-                        time.sleep(3.0)
-                        game_over_scene(score)
+                        # Play crash sound using mixer on an available voice
+                        for voice_num in range(1, mixer.voice_count):
+                            if not mixer.voice[voice_num].playing:
+                                mixer.voice[voice_num].play(crash_sound)
+                                mixer.voice[voice_num].level = 0.8 # SFX volume
+                                break
+                        # Subtract one life
+                        lives -= 1
+            
+                        # Move alien off screen to avoid instant repeated collision
+                        aliens[alien_number].move(
+                            random.randint(
+                                0 + constants.SPRITE_SIZE,
+                                constants.SCREEN_X - constants.SPRITE_SIZE
+                            ),
+                            constants.OFF_TOP_SCREEN
+                        )
+                        score_text.cursor(0, 0)
+                        lives_text.move(90, 0)
+                        lives_text.text("Lives: {0}".format(lives))
+
+                        # Pause briefly to show effect
+                        time.sleep(1.0)
+            
+                        # If no lives left, game over
+                        if lives <= 0:
+                            save_high_score(score)
+                            # Stop all mixer voices and deinitialize audio before game over
+                            for i in range(mixer.voice_count):
+                                mixer.voice[i].stop()
+                            audio_out.deinit() # Release audio hardware
+                            game_over_scene(score)
+
 
         # redraw sprites
         game.render_sprites(aliens + lasers + [ship])
@@ -422,7 +512,8 @@ def game_over_scene(final_score):
     background = stage.Grid(
         image_bank_2, constants.SCREEN_GRID_X, constants.SCREEN_GRID_Y
     )
-
+    
+    high_score = load_high_score()
     # Add a list for text
     text = []
     # Text object for displaying the final score
@@ -447,6 +538,14 @@ def game_over_scene(final_score):
     text3.text("PRESS SELECT")
     text.append(text3)
 
+    # Text object for displaying the high score
+    text4 = stage.Text(
+        width=29, height=14, font=None, palette=constants.RED_PALETTE, buffer = None
+    )
+    text4.move(22, 40)
+    text4.text("High Score: {:0>2d}".format(high_score))
+    text.append(text4)
+    
     # create a stage for the background to show up on
     # Set the frame rate to 60fps
     game = stage.Stage(ugame.display, constants.FPS)
@@ -473,3 +572,4 @@ def game_over_scene(final_score):
 
 if __name__ == "__main__":
     splash_scene()
+

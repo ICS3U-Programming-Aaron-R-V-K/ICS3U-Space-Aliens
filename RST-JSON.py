@@ -8,6 +8,7 @@ import ugame
 import stage
 import time
 import random
+import json
 
 # library to reboot the pybadge, making the game start over, and reload the game
 import supervisor
@@ -135,6 +136,35 @@ def menu_scene():
         # redraw sprites
         game.tick()
 
+# --- HIGH SCORE FUNCTIONS (NOW USING JSON) ---
+
+def load_high_score(filename="gamedata.json"):
+    # This function loads the high score from a JSON file.
+    try:
+        with open(filename, "r") as file:
+            # Load the entire JSON file into a dictionary
+            data = json.load(file)
+            # Return the value for the "high_score" key
+            return data.get("high_score", 0)
+    except (OSError, ValueError):
+        # If file doesn't exist or is not valid JSON, return 0
+        return 0
+
+def save_high_score(score, filename="gamedata.json"):
+    """This function saves the high score to a JSON file."""
+    current_high_score = load_high_score(filename)
+
+    if score > current_high_score:
+        # Create a dictionary to hold our game data
+        data = {"high_score": score}
+        
+        # You could easily add more data here in the future!
+        # data["player_initials"] = "ABC"
+        
+        with open(filename, "w") as file:
+            # Use json.dump() to write the dictionary to the file
+            json.dump(data, file)
+
 
 # Define the game_scene function
 def game_scene():
@@ -147,7 +177,14 @@ def game_scene():
     score_text.cursor(0, 0)
     score_text.move(1, 1)
     score_text.text("Score: {0}".format(score))
+    
+    lives = 3
+    lives_text = stage.Text(width=29, height=14)
+    score_text.cursor(0, 0)
+    lives_text.move(90, 0)
+    lives_text.text("Lives: {0}".format(lives))
 
+    
     # Define the alien function
     def show_alien():
         # This function takes an alien from off the screen and moves it on screen
@@ -232,7 +269,7 @@ def game_scene():
     # and set the framerate to 60fps
     game = stage.Stage(ugame.display, constants.FPS)
     # Set the layers of all sprites, items show up in order
-    game.layers = [score_text]  + aliens + lasers + [ship] + [background]
+    game.layers = [score_text, lives_text] + aliens + lasers + [ship] + [background]
     # Render al sprites
     # most likely you will render the background once per game scene
     game.render_block()
@@ -382,6 +419,7 @@ def game_scene():
 
             # When an alien touches the ship
             # Each frame check if any alien is touching the ship
+            # Check for collision between alien and ship
             for alien_number in range(len(aliens)):
                 if aliens[alien_number].x > 0:
                     if stage.collide(
@@ -394,11 +432,34 @@ def game_scene():
                         ship.x + 15,
                         ship.y + 15,
                     ):
-                        # aliens hit the ship
+                        # Play crash sound
                         sound.stop()
                         sound.play(crash_sound)
-                        time.sleep(3.0)
-                        game_over_scene(score)
+            
+                        # Subtract one life
+                        lives -= 1
+            
+                        # Move alien off screen to avoid instant repeated collision
+                        aliens[alien_number].move(
+                            random.randint(
+                                0 + constants.SPRITE_SIZE,
+                                constants.SCREEN_X - constants.SPRITE_SIZE
+                            ),
+                            constants.OFF_TOP_SCREEN
+                        )
+                        score_text.cursor(0, 0)
+                        lives_text.move(90, 0)
+                        lives_text.text("Lives: {0}".format(lives))
+
+                        # Pause briefly to show effect
+                        time.sleep(1.0)
+            
+                        # If no lives left, game over
+                        if lives <= 0:
+                            save_high_score(score)
+                            game_over_scene(score)
+            
+
 
         # redraw sprites
         game.render_sprites(aliens + lasers + [ship])
