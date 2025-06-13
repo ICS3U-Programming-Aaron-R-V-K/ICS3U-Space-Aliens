@@ -411,6 +411,7 @@ def game_scene():
             
                         # Move alien off screen to avoid instant repeated collision
                         aliens[alien_number].move(
+                            # Determines new horizontal position
                             random.randint(
                                 0 + constants.SPRITE_SIZE,
                                 constants.SCREEN_X - constants.SPRITE_SIZE

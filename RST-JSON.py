@@ -151,7 +151,7 @@ def load_high_score(filename="gamedata.json"):
         return 0
 
 def save_high_score(score, filename="gamedata.json"):
-    """This function saves the high score to a JSON file."""
+    #This function saves the high score to a JSON file."""
     current_high_score = load_high_score(filename)
 
     if score > current_high_score:
@@ -517,6 +517,7 @@ def game_over_scene(final_score):
     # render the background and initial location of sprite list
     # most likely you will only render background once per scene
     game.render_block()
+
 
     # repeat forever, game loop
     while True:

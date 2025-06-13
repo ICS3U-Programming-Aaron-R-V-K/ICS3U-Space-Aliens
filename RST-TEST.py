@@ -160,6 +160,12 @@ def save_high_score(score, filename="highscore.txt"):
             print("Could not save high score.")
             # If the new score is not higher, nothing will happend
 
+# define function for movement
+# Three arguments, the value you want to restrict, the minimum value and the max value allowed
+def clamp(number,n_min,n_max):
+    # (max(number,n_min) This part ensures the num is at list the minimum, if the number is smaller than n_min it will return n_min, otherwise it returns number
+    # min(...,n_max), ensures that the result that comes from the minimum number is at most the n_max, if it is larger is returns the max, otherwise it returns the result
+    return min(max(number,n_min),n_max)
 # Define the game_scene function
 def game_scene():
     high_score = load_high_score()
@@ -268,6 +274,13 @@ def game_scene():
     # most likely you will render the background once per game scene
     game.render_block()
 
+    # Variable to store the current horizontal speed and direction
+    x_velocity = 0
+    # positive velocity, means right(max velocity)
+    max_vel = 1
+    # negative velocity means left(min velocity)
+    min_vel = -1
+
     # Repeat forever loop
     while True:
         # Get user input
@@ -303,23 +316,29 @@ def game_scene():
         # If keys is pressed right
         if keys & ugame.K_RIGHT != 0:
             # if the ships is inside the grid it can move
-            if ship.x <= constants.SCREEN_X - constants.SPRITE_SIZE:
-                ship.move((ship.x + constants.SPRITE_MOVEMENT_SPEED), ship.y)
-            else:
-                # It will bounce off the limit of the right part
-                ship.move(constants.SCREEN_X - constants.SPRITE_SIZE, ship.y)
+            x_velocity-=.05
+            
+            
         # If keys pressed is left
-        if keys & ugame.K_LEFT != 0:
+        elif keys & ugame.K_LEFT != 0:
             # if the ship is inside the grid it can move
-            if ship.x >= 0:
-                ship.move((ship.x - constants.SPRITE_MOVEMENT_SPEED), ship.y)
-            # Else it will bounce off the left limit
-            else:
-                ship.move(0, ship.y)
+            x_velocity+=.05
+        else:
+            x_velocity*=.95
         if keys & ugame.K_UP != 0:
             pass
         if keys & ugame.K_DOWN != 0:
             pass
+        
+        # this variable ensures the value never exceeds max_vel or goes below min_vel
+        x_velocity = clamp(x_velocity,min_vel,max_vel)
+        # if x is positive from pressing left it will go right, and vice versa 
+        ship.move((ship.x - x_velocity), ship.y)
+        if ship.x >= constants.SCREEN_X - constants.SPRITE_SIZE:
+            # It will bounce off the limit of the right part
+            ship.move(constants.SCREEN_X - constants.SPRITE_SIZE, ship.y)
+        if ship.x <= 0:
+            ship.move(0, ship.y)
 
         # update game logic
         if a_button == constants.button_state["button_just_pressed"]:
